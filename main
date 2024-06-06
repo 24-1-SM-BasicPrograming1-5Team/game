@@ -1,0 +1,198 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <windows.h>    
+//-------------------------------------------------------------------------------
+// 키보드의 화살표를 이용하여 움직일 수 있음
+// 엔터키를 입력시 커서 자리에 O를 표시함
+// 
+// ------------------------------------------------------------------------------
+// Node 구조체 정의
+typedef struct Node {
+    char value;  //노드의 값 
+    struct Node* right; 
+    struct Node* left;  
+    struct Node* up;
+    struct Node* down;
+} Node;
+
+// 커서 이동 함수
+void gotoxy(int x, int y) {
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+// 보드 초기화 및 연결 함수
+Node**** BoardClear(int size) {
+    int i, j, k, l;
+    Node**** board = (Node****)malloc(size * sizeof(Node***));
+    for (i = 0; i < size; ++i)
+    {
+        board[i] = (Node***)malloc(size * sizeof(Node**));
+        for (j = 0; j < size; ++j) 
+        {
+            board[i][j] = (Node**)malloc(size * sizeof(Node*));
+            for (k = 0; k < size; ++k) 
+            {
+                board[i][j][k] = (Node*)malloc(size * sizeof(Node));
+                for (l = 0; l < size; ++l) 
+                {
+                    board[i][j][k][l].value = ' ';
+                    board[i][j][k][l].right = NULL;
+                    board[i][j][k][l].left = NULL;
+                    board[i][j][k][l].up = NULL;
+                    board[i][j][k][l].down = NULL;
+                }
+            }
+        }
+    }
+
+    for (i = 0; i < size; ++i) 
+    {
+        for (j = 0; j < size; ++j) 
+        {
+            for (k = 0; k < size; ++k) 
+            {
+                for (l = 0; l < size; ++l) 
+                {
+                    if (i > 0) 
+                        board[i][j][k][l].up = &board[i - 1][j][k][l];
+                    if (i < size - 1) 
+                        board[i][j][k][l].down = &board[i + 1][j][k][l];
+                    if (j > 0) 
+                        board[i][j][k][l].left = &board[i][j - 1][k][l];
+                    if (j < size - 1) 
+                        board[i][j][k][l].right = &board[i][j + 1][k][l];
+                }
+            }
+        }
+    }
+
+    return board;
+}
+
+// 보드 초기화 함수
+void clearBoard(Node**** board, int size) {
+    int i, j, k, l;
+    for (i = 0; i < size; ++i) 
+    {
+        for (j = 0; j < size; ++j) 
+        {
+            for (k = 0; k < size; ++k)
+            {
+                for (l = 0; l < size; ++l) 
+                {
+                    board[i][j][k][l].value = ' ';
+                }
+            }
+        }
+    }
+}
+
+// 보드 출력 함수 ( 현재 보드 상태와 커서 위치 출력 ) 
+void printBoard(Node**** board, int size, int cursorX, int cursorY) {
+    int i, j;
+    gotoxy(0, 0);  // 커서를 화면 맨 위로 이동
+    for (i = 0; i < size; ++i)
+    {
+        for (j = 0; j < size; ++j) 
+        {
+            if (i == cursorX && j == cursorY) 
+            {
+                printf("[O]");  // 커서 모양 [O]
+            }
+            else
+            {
+                printf(" %c ", board[i][j][0][0].value);
+            }
+            if (j < size - 1) printf("|");  // 보드의 세로선
+        }
+        printf("\n");
+        if (i < size - 1) 
+        {
+            for (j = 0; j < size; ++j)
+            {
+                printf("---");              //보드의 가로선
+                if (j < size - 1)
+                    printf("+");
+            }
+            printf("\n");
+        }
+    }
+    printf("\n방향키 => 동작, 엔터 => 지정, q => 종료\n");
+}
+
+// 사용자 입력 함수
+void placeO(Node**** board, int cursorX, int cursorY) {
+    board[cursorX][cursorY][0][0].value = 'O';
+}
+
+void Input(Node**** board, int size) {
+    int cursorX = 0, cursorY = 0;
+    char choice;
+
+    system("cls");  // 콘솔 화면 지우기
+    printBoard(board, size, cursorX, cursorY);
+
+    do {
+        choice = _getch();  // 키 입력 받기
+
+        switch (choice) 
+        {
+        case 72:  // 윗 방향키
+            if (cursorX > 0) cursorX--;
+            break;
+        case 80:  // 아래 방향키
+            if (cursorX < size - 1) cursorX++;
+            break;
+        case 75:  // 왼쪽 방향키
+            if (cursorY > 0) cursorY--;
+            break;
+        case 77:  // 오른쪽 방향키
+            if (cursorY < size - 1) cursorY++;
+            break;
+        case 13:  // 엔터
+            placeO(board, cursorX, cursorY);
+            break;
+        case 'q':  // 나가기( q )
+            return;
+        default:
+            break;
+        }
+
+        printBoard(board, size, cursorX, cursorY);
+
+    } 
+    while (choice != 'q');
+}
+
+int main() {
+    int size = 3;
+    Node**** board = BoardClear(size);
+
+    // 보드 초기화 
+    clearBoard(board, size);
+
+    // 사용자 입력 처리
+    Input(board, size);
+
+    // 동적 메모리 해제
+    int x, y, z;
+    for (x = 0; x < size; ++x) 
+    {
+        for (y = 0; y < size; ++y) 
+        {
+            for (z = 0; z < size; ++z) 
+            {
+                free(board[x][y][z]);
+            }
+            free(board[x][y]);
+        }
+        free(board[x]);
+    }
+    free(board);
+
+    return 0;
+}
